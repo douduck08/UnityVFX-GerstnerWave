@@ -5,16 +5,22 @@
         _Glossiness ("Smoothness", Range(0,1)) = 0.5
         _Metallic ("Metallic", Range(0,1)) = 0.0
 
+        [Header(Wave)]
+        [Toggle(ENABLE_GERSTNER)] _Gerstner ("Gerstner Wave", Int) = 0
+
         [Header(Wave 1)]
-        _WaveHeight1 ("Wave Height", float) = 0.1
+        _WaveHeight1 ("Wave Height", float) = 1
+        _WaveSteepness1 ("Wave Steepness", float) = 1
         _WaveParam1 ("Direction (XY), Wave Length (Y), Speed (W)", Vector) = (1, 0, 1, 1)
 
         [Header(Wave 2)]
-        _WaveHeight2 ("Wave Height", float) = 0.1
+        _WaveHeight2 ("Wave Height", float) = 1
+        _WaveSteepness2 ("Wave Steepness", float) = 1
         _WaveParam2 ("Direction (XY), Wave Length (Y), Speed (W)", Vector) = (1, 0, 1, 1)
 
         [Header(Wave 3)]
-        _WaveHeight3 ("Wave Height", float) = 0.1
+        _WaveHeight3 ("Wave Height", float) = 1
+        _WaveSteepness3 ("Wave Steepness", float) = 1
         _WaveParam3 ("Direction (XY), Wave Length (Y), Speed (W)", Vector) = (1, 0, 1, 1)
     }
     SubShader {
@@ -22,6 +28,8 @@
         LOD 200
 
         CGPROGRAM
+        #pragma multi_compile _ ENABLE_GERSTNER
+
         #pragma surface surf Standard vertex:vert fullforwardshadows addshadow
         #pragma target 3.0
 
@@ -31,6 +39,7 @@
         half4 _Color;
 
         float _WaveHeight1, _WaveHeight2, _WaveHeight3;
+        float _WaveSteepness1, _WaveSteepness2, _WaveSteepness3;
         float4 _WaveParam1, _WaveParam2, _WaveParam3;
 
         struct Input {
@@ -51,7 +60,63 @@
             return h;
         }
 
+        float3 GerstnerWave (float2 pos, float amplitude, float steepness, float4 param, out float3 normal, out float3 tangent) {
+            float2 direction = param.xy;
+            float frequency = 1.0 / param.z;
+            float phase = param.w * frequency;
+            steepness = clamp(0, param.z / amplitude, steepness);
+
+            float f = dot(pos, direction) * frequency - phase * _Time.y;
+            float sin_f = sin(f);
+            float cos_f = cos(f);
+            float qa = steepness * amplitude;
+            float wa = frequency * amplitude;
+            float qwa = steepness * wa;
+
+            float3 displacement;
+            displacement.x = direction.x * qa * cos_f;
+            displacement.y = direction.y * qa * cos_f;
+            displacement.z = amplitude * sin_f;
+
+            normal.xy = direction * (wa * cos_f);
+            normal.z = qwa * sin_f - 1;
+            tangent.x = qwa * direction.x * direction.y * sin_f;
+            tangent.y = qwa * direction.y * direction.y * sin_f - 1;
+            tangent.z = -wa * direction.y * cos_f;
+            return displacement;
+        }
+
         void vert (inout appdata_full v) {
+#ifdef ENABLE_GERSTNER
+            // gerstner wave
+            float3 displacement = 0, normal = 0, tangent = 0;
+            float3 tmp_normal, tmp_tangent;
+
+            // Wave 1
+            displacement += GerstnerWave(v.vertex.xy, _WaveHeight1, _WaveSteepness1, _WaveParam1, tmp_normal, tmp_tangent);
+            normal += tmp_normal;
+            tangent += tmp_tangent;
+
+            // Wave 2
+            displacement += GerstnerWave(v.vertex.xy, _WaveHeight2, _WaveSteepness2, _WaveParam2, tmp_normal, tmp_tangent);
+            normal += tmp_normal;
+            tangent += tmp_tangent;
+
+            // Wave 3
+            displacement += GerstnerWave(v.vertex.xy, _WaveHeight3, _WaveSteepness3, _WaveParam3, tmp_normal, tmp_tangent);
+            normal += tmp_normal;
+            tangent += tmp_tangent;
+
+            // Normalize
+            float3 bitangent = cross(v.normal, v.tangent.xyz) * v.tangent.w;
+            v.vertex.xyz += v.tangent.xyz * displacement.x;
+            v.vertex.xyz += bitangent * displacement.y;
+            v.vertex.xyz += v.normal * displacement.z;
+
+            v.normal = normalize(normal);
+            v.tangent.xyz = normalize(tangent);
+#else
+            // sine wave
             float h = 0;
             float3 normal = 0, tangent = 0;
             float3 tmp_normal, tmp_tangent;
@@ -75,6 +140,7 @@
             v.vertex.xyz += v.normal * h;
             v.normal = normalize(normal);
             v.tangent.xyz = normalize(tangent);
+#endif
         }
 
         void surf (Input IN, inout SurfaceOutputStandard o) {
