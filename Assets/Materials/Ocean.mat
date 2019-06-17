@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Ocean
+  m_Shader: {fileID: 4800000, guid: 7d016d51565795545b3380ae5485b939, type: 3}
+  m_ShaderKeywords: ENABLE_GERSTNER _GERSTNER_ON
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _Gerstner: 1
+    - _Glossiness: 0.7
+    - _Metallic: 0
+    - _WaveHeight1: 8
+    - _WaveHeight2: 3
+    - _WaveHeight3: 1
+    - _WaveParam1: 0.1
+    - _WaveSteepness1: 0.5
+    - _WaveSteepness2: 0.7
+    - _WaveSteepness3: 0.7
+    m_Colors:
+    - _Color: {r: 0, g: 0.47942066, b: 1, a: 1}
+    - _WaveParam1: {r: -1, g: 0, b: 12, a: 20}
+    - _WaveParam2: {r: 1, g: 0.75, b: 7, a: 2}
+    - _WaveParam3: {r: 1, g: -0.7, b: 4, a: 15}
