@@ -19,6 +19,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BumpMap:
+        m_Texture: {fileID: 2800000, guid: 0a476c680c27e6b4883eb70e05ea5e3f, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _MainTex:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -27,6 +31,7 @@ Material:
     - _Gerstner: 1
     - _Glossiness: 0.7
     - _Metallic: 0
+    - _ScatterFalloff: 1
     - _WaveHeight1: 0.2
     - _WaveHeight2: 0.1
     - _WaveHeight3: 0.2
@@ -36,6 +41,7 @@ Material:
     - _WaveSteepness3: 1.3
     m_Colors:
     - _Color: {r: 0, g: 0.47942066, b: 1, a: 1}
+    - _ScatterColor: {r: 0, g: 1, b: 0.8462274, a: 1}
     - _WaveParam1: {r: 1, g: 0, b: 0.5, a: 1}
     - _WaveParam2: {r: 1, g: 1, b: 0.3, a: 1}
     - _WaveParam3: {r: 0, g: -0.75, b: 0.5, a: 2}

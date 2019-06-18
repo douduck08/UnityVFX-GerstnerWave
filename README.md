@@ -6,6 +6,7 @@ The vfx is written in Unity surface shader, which is a standard lighting and opa
 Using Unity version 2019.1.0f2
 
 ![gerstner wave](https://github.com/douduck08/UnityVFX-GerstnerWave/blob/master/images/gerstner_wave.gif)
+![gerstner wave](https://github.com/douduck08/UnityVFX-GerstnerWave/blob/master/images/gerstner_ocean.gif)
 
 ### Compare
 * Gerstner wave and Sine wave

@@ -1,22 +1,44 @@
 #include "UnityPBSLighting.cginc"
+// Upgrade NOTE: excluded shader from DX11; has structs without semantics (struct appdata members height)
+#pragma exclude_renderers d3d11
 #include "Tessellation.cginc"
 
 sampler2D _MainTex;
+sampler2D _BumpMap;
 half _Glossiness;
 half _Metallic;
 half4 _Color;
+
+half4 _ScatterColor;
+float _ScatterFalloff;
+float _TessellationMinDist;
+float _TessellationMaxDist;
+float _Tessellation;
 
 float _WaveHeight1, _WaveHeight2, _WaveHeight3;
 float _WaveSteepness1, _WaveSteepness2, _WaveSteepness3;
 float4 _WaveParam1, _WaveParam2, _WaveParam3;
 
-
 // structure define
+struct appdata {
+    float4 vertex : POSITION;
+    float4 tangent : TANGENT;
+    float3 normal : NORMAL;
+    float4 texcoord : TEXCOORD0;
+    float4 texcoord1 : TEXCOORD1;
+    float4 texcoord2 : TEXCOORD2;
+    float4 color : COLOR;
+    UNITY_VERTEX_INPUT_INSTANCE_ID
+};
+
 struct Input {
     float2 uv_MainTex;
+    float2 uv_BumpMap;
+    float4 color : COLOR; // use this to pass custome data in tessellate shader
 };
 
 struct SurfaceOutputScattering {
+    // Standard
     fixed3 Albedo;      // base (diffuse or specular) color
     float3 Normal;      // tangent space normal, if written
     half3 Emission;
@@ -24,6 +46,7 @@ struct SurfaceOutputScattering {
     half Smoothness;    // 0=rough, 1=smooth
     half Occlusion;     // occlusion (default 1)
     fixed Alpha;        // alpha for transparencies
+    // Custom
     half Thickness;
 };
 
@@ -68,7 +91,7 @@ float3 GerstnerWave (float2 pos, float amplitude, float steepness, float4 param,
     return displacement;
 }
 
-void vert (inout appdata_full v) {
+void vert (inout appdata v) {
 #ifdef ENABLE_GERSTNER
     // gerstner wave
     float3 displacement = 0, normal = 0, tangent = 0;
@@ -97,6 +120,8 @@ void vert (inout appdata_full v) {
 
     v.normal = normalize(normal);
     v.tangent.xyz = normalize(tangent);
+
+    v.color.r = 1 - displacement.z / (_WaveHeight1 + _WaveHeight2 + _WaveHeight3);
 #else
     // sine wave
     float h = 0;
@@ -122,13 +147,14 @@ void vert (inout appdata_full v) {
     v.vertex.xyz += v.normal * h;
     v.normal = normalize(normal);
     v.tangent.xyz = normalize(tangent);
+
+    v.color.r = 1 - h / (_WaveHeight1 + _WaveHeight2 + _WaveHeight3);
 #endif
+
 }
 
-float4 tess (appdata_full v0, appdata_full v1, appdata_full v2) {
-    float minDist = 10.0;
-    float maxDist = 25.0;
-    return UnityDistanceBasedTess(v0.vertex, v1.vertex, v2.vertex, minDist, maxDist, 5);
+float4 tess (appdata v0, appdata v1, appdata v2) {
+    return UnityDistanceBasedTess(v0.vertex, v1.vertex, v2.vertex, _TessellationMinDist, _TessellationMaxDist, _Tessellation);
 }
 
 void surf (Input IN, inout SurfaceOutputScattering o) {
@@ -137,6 +163,8 @@ void surf (Input IN, inout SurfaceOutputScattering o) {
     o.Metallic = _Metallic;
     o.Smoothness = _Glossiness;
     o.Alpha = c.a;
+    o.Normal = UnpackNormal (tex2D (_BumpMap, IN.uv_BumpMap));
+    o.Thickness = IN.color.r;
 }
 
 inline half4 LightingScattering (SurfaceOutputScattering s, float3 viewDir, UnityGI gi) {
@@ -151,8 +179,8 @@ inline half4 LightingScattering (SurfaceOutputScattering s, float3 viewDir, Unit
     half outputAlpha;
     s.Albedo = PreMultiplyAlpha (s.Albedo, s.Alpha, oneMinusReflectivity, /*out*/ outputAlpha);
 
-    float scatterFactor = dot(-gi.light.dir, viewDir);
-    s.Albedo = lerp(s.Albedo, gi.light.color, scatterFactor);
+    float scatterFactor = pow(saturate(dot(-gi.light.dir, viewDir)) * s.Thickness, _ScatterFalloff);
+    s.Albedo = s.Albedo + gi.light.color * _ScatterColor * scatterFactor;
 
     half4 c = UNITY_BRDF_PBS (s.Albedo, specColor, oneMinusReflectivity, s.Smoothness, s.Normal, viewDir, gi.light, gi.indirect);
     c.a = outputAlpha;
